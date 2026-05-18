@@ -13,35 +13,35 @@ type RingPoint = TouchPoint & {
 const CAFES = [
   {
     name: "블루샥",
-    icon: "🫐",
+    logo: "/logo-blushaak.png",
     discount: 7,
     bg: "#E8F4F0",
     link: "https://link.kakaopay.com/u/payweb?bg_color=bg_grey&navigation=hide&url=https%3A%2F%2Fgood-deal-web.kakaopay.com%2Fpayment%2Fbrd-69cd09d9-47d86b-169a2d51fd%3FappType%3DKAKAOPAY%26f_referral_id%3DRC3571098572034610115%26isAuth%3Dfalse%26lockStatus%3Dfalse%26t_ch%3Dgooddeal-share&version=-492422463",
   },
   {
     name: "메가커피",
-    icon: "☕",
+    logo: "/logo-mega.png",
     discount: 5,
     bg: "#FFF3E0",
     link: "https://link.kakaopay.com/_/Ba3hu2g?f_referral_id=RC3571098572034610115",
   },
   {
     name: "컴포즈커피",
-    icon: "🍵",
+    logo: "/logo-compose.svg",
     discount: 5,
     bg: "#F3E5F5",
     link: "https://link.kakaopay.com/_/TBPyqU8?f_referral_id=RC3571098572034610115",
   },
   {
     name: "빽다방",
-    icon: "🧃",
+    logo: "/logo-paik.png",
     discount: 4,
     bg: "#FFF8E1",
     link: "https://link.kakaopay.com/_/icIghBU?f_referral_id=RC3571098572034610115",
   },
   {
     name: "이디야",
-    icon: "🌿",
+    logo: "/logo-ediya.png",
     discount: 4,
     bg: "#E8F5E9",
     link: "https://link.kakaopay.com/_/RACjFjp?f_referral_id=RC3571098572034610115",
@@ -321,10 +321,14 @@ export default function Home() {
                     }`}
                   >
                     <span
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-xl"
+                      className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl"
                       style={{ backgroundColor: cafe.bg }}
                     >
-                      {cafe.icon}
+                      <img
+                        src={cafe.logo}
+                        alt={cafe.name}
+                        className="h-full w-full object-contain p-1"
+                      />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-base font-black">
@@ -457,10 +461,14 @@ export default function Home() {
           <div className="flex flex-1 flex-col justify-center">
             <article className="rounded-2xl bg-white p-6 text-center shadow-sm">
               <div
-                className="mx-auto grid h-24 w-24 place-items-center rounded-[2rem] text-6xl"
+                className="mx-auto grid h-24 w-24 place-items-center overflow-hidden rounded-[2rem]"
                 style={{ backgroundColor: selectedCafe.bg }}
               >
-                {selectedCafe.icon}
+                <img
+                  src={selectedCafe.logo}
+                  alt={selectedCafe.name}
+                  className="h-full w-full object-contain p-2"
+                />
               </div>
 
               <div className="mt-6 inline-flex rounded-full bg-[#FFEC00] px-4 py-2 text-sm font-black text-[#3A1D00]">
