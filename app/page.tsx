@@ -23,28 +23,28 @@ const CAFES = [
     icon: "☕",
     discount: 5,
     bg: "#FFF3E0",
-    link: "#",
+    link: "https://link.kakaopay.com/_/Ba3hu2g?f_referral_id=RC3571098572034610115",
   },
   {
     name: "컴포즈커피",
     icon: "🍵",
     discount: 5,
     bg: "#F3E5F5",
-    link: "#",
+    link: "https://link.kakaopay.com/_/TBPyqU8?f_referral_id=RC3571098572034610115",
   },
   {
     name: "빽다방",
     icon: "🧃",
     discount: 4,
     bg: "#FFF8E1",
-    link: "#",
+    link: "https://link.kakaopay.com/_/icIghBU?f_referral_id=RC3571098572034610115",
   },
   {
     name: "이디야",
     icon: "🌿",
     discount: 4,
     bg: "#E8F5E9",
-    link: "#",
+    link: "https://link.kakaopay.com/_/RACjFjp?f_referral_id=RC3571098572034610115",
   },
 ];
 
