@@ -199,6 +199,30 @@ export default function Home() {
       schedulePickWinner();
     }
 
+    function handleTouchMove(event: TouchEvent) {
+      event.preventDefault();
+
+      if (hasPickedRef.current || !gameZone) {
+        return;
+      }
+
+      const rect = gameZone.getBoundingClientRect();
+
+      for (const touch of Array.from(event.changedTouches)) {
+        const currentTouch = touchesRef.current.get(touch.identifier);
+
+        if (currentTouch) {
+          touchesRef.current.set(touch.identifier, {
+            ...currentTouch,
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top,
+          });
+        }
+      }
+
+      syncRings();
+    }
+
     function handleTouchEnd(event: TouchEvent) {
       event.preventDefault();
 
@@ -217,10 +241,14 @@ export default function Home() {
     gameZone.addEventListener("touchstart", handleTouchStart, {
       passive: false,
     });
+    gameZone.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
     gameZone.addEventListener("touchend", handleTouchEnd, { passive: false });
 
     return () => {
       gameZone.removeEventListener("touchstart", handleTouchStart);
+      gameZone.removeEventListener("touchmove", handleTouchMove);
       gameZone.removeEventListener("touchend", handleTouchEnd);
     };
   }, [schedulePickWinner, step, syncRings]);
@@ -246,9 +274,9 @@ export default function Home() {
   return (
     <main className="min-h-dvh bg-[#F7F7F7] text-[#111111]">
       <section className="mx-auto flex min-h-dvh w-full max-w-[360px] flex-col px-4 py-4">
-        <header className="flex items-center justify-between rounded-2xl bg-[#FFEC00] px-4 py-3 text-[#3A1D00] shadow-sm">
-          <p className="text-sm font-black tracking-tight">
-            kakaopay gooddeal
+        <header className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFEC00] px-4 py-3 text-[#3A1D00] shadow-sm">
+          <p className="min-w-0 flex-1 text-[13px] font-black leading-tight tracking-tight">
+            커피내기하고 굿딜로 할인받기
           </p>
           <span className="rounded-full bg-white/75 px-3 py-1 text-[11px] font-bold">
             {statusBadge}
@@ -338,9 +366,6 @@ export default function Home() {
               <h1 className="text-2xl font-black tracking-tight">
                 손가락 내기 게임
               </h1>
-              <p className="mt-2 text-sm font-medium text-neutral-500">
-                Chwazi처럼 모두 동시에 화면을 눌러주세요.
-              </p>
             </div>
 
             <div
@@ -365,16 +390,30 @@ export default function Home() {
                     top: ring.y,
                     width: ring.isWinner ? 90 : 72,
                     height: ring.isWinner ? 90 : 72,
-                    border: `4px solid ${
-                      ring.isWinner ? "#FFEC00" : ring.color
-                    }`,
                     opacity: ring.isDimmed ? 0.18 : 1,
                     transform: "translate(-50%, -50%)",
-                    boxShadow: ring.isWinner
-                      ? "0 0 32px rgba(255, 236, 0, 0.75)"
-                      : "0 0 18px rgba(255, 255, 255, 0.15)",
                   }}
-                />
+                >
+                  {!ring.isDimmed && (
+                    <span
+                      className="absolute inset-0 animate-ping rounded-full opacity-35"
+                      style={{
+                        backgroundColor: ring.isWinner ? "#FFEC00" : ring.color,
+                      }}
+                    />
+                  )}
+                  <span
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      border: `4px solid ${
+                        ring.isWinner ? "#FFEC00" : ring.color
+                      }`,
+                      boxShadow: ring.isWinner
+                        ? "0 0 32px rgba(255, 236, 0, 0.75)"
+                        : "0 0 18px rgba(255, 255, 255, 0.15)",
+                    }}
+                  />
+                </div>
               ))}
             </div>
 

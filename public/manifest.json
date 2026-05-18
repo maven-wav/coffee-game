@@ -1,0 +1,13 @@
+{
+  "name": "커피쏘기 게임",
+  "short_name": "커피내기",
+  "description": "오늘 커피를 쏠 사람을 손가락 게임으로 뽑고 카카오페이 굿딜로 할인받기",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFEC00",
+  "theme_color": "#FFEC00",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
