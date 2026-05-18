@@ -136,7 +136,6 @@ export default function Home() {
     touchesRef.current.forEach((point, id) => {
       touchesRef.current.set(id, {
         ...point,
-        color: id === winnerId ? "#FFEC00" : point.color,
         isWinner: id === winnerId,
         isDimmed: id !== winnerId,
       });
@@ -283,7 +282,7 @@ export default function Home() {
           </span>
         </header>
 
-        <div className="flex justify-center py-5 text-lg font-black text-[#3A1D00]">
+        <div className="flex justify-center py-3 text-lg font-black text-[#3A1D00]">
           {step === "select" ? "●" : "○"}
           <span className="px-2 text-[#B8B8B8]">—</span>
           {step === "game" ? "●" : "○"}
@@ -294,15 +293,15 @@ export default function Home() {
         {step === "select" && (
           <div className="flex flex-1 flex-col">
             <div className="mb-5">
-              <h1 className="text-2xl font-black tracking-tight">
+              <h1 className="text-xl font-black tracking-tight">
                 어떤 커피로 내기할까요?
               </h1>
-              <p className="mt-2 text-sm font-medium text-neutral-500">
+              <p className="mt-1 text-sm font-medium text-neutral-500">
                 카카오페이 굿딜 혜택을 고르고 손가락 게임을 시작하세요.
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {CAFES.map((cafe, index) => {
                 const isSelected = selectedCafeIndex === index;
 
@@ -311,14 +310,14 @@ export default function Home() {
                     key={cafe.name}
                     type="button"
                     onClick={() => setSelectedCafeIndex(index)}
-                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition active:scale-[0.99] ${
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
                       isSelected
                         ? "border-[#3A1D00] bg-[#FFFDE7]"
                         : "border-transparent bg-white"
                     }`}
                   >
                     <span
-                      className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-2xl"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-xl"
                       style={{ backgroundColor: cafe.bg }}
                     >
                       {cafe.icon}
@@ -346,13 +345,13 @@ export default function Home() {
             </div>
 
             <div className="mt-auto pt-5">
-              <div className="mb-3 rounded-2xl bg-white p-4 text-sm font-bold text-[#3A1D00]">
+              <div className="mb-2 rounded-2xl bg-white p-3 text-sm font-bold text-[#3A1D00]">
                 블루샥이 지금 최대 할인! 오늘의 추천 ☕
               </div>
               <button
                 type="button"
                 onClick={startGame}
-                className="w-full rounded-xl bg-[#FFEC00] px-5 py-4 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
+                className="w-full rounded-xl bg-[#FFEC00] px-5 py-3 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
               >
                 게임 시작 →
               </button>
@@ -370,7 +369,7 @@ export default function Home() {
 
             <div
               ref={gameZoneRef}
-              className="relative grid aspect-[9/10] w-full overflow-hidden rounded-2xl bg-[#0F0F20]"
+              className="relative grid aspect-[9/12] w-full overflow-hidden rounded-2xl bg-[#0F0F20]"
               style={{ touchAction: "none" }}
             >
               <div
@@ -388,8 +387,8 @@ export default function Home() {
                   style={{
                     left: ring.x,
                     top: ring.y,
-                    width: ring.isWinner ? 90 : 72,
-                    height: ring.isWinner ? 90 : 72,
+                    width: ring.isWinner ? 120 : 100,
+                    height: ring.isWinner ? 120 : 100,
                     opacity: ring.isDimmed ? 0.18 : 1,
                     transform: "translate(-50%, -50%)",
                   }}
@@ -398,21 +397,35 @@ export default function Home() {
                     <span
                       className="absolute inset-0 animate-ping rounded-full opacity-35"
                       style={{
-                        backgroundColor: ring.isWinner ? "#FFEC00" : ring.color,
+                        backgroundColor: ring.color,
                       }}
                     />
                   )}
-                  <span
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      border: `4px solid ${
-                        ring.isWinner ? "#FFEC00" : ring.color
-                      }`,
-                      boxShadow: ring.isWinner
-                        ? "0 0 32px rgba(255, 236, 0, 0.75)"
-                        : "0 0 18px rgba(255, 255, 255, 0.15)",
-                    }}
-                  />
+                  {ring.isWinner ? (
+                    <span
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        backgroundColor: ring.color,
+                        boxShadow: `0 0 32px ${ring.color}`,
+                      }}
+                    >
+                      <span
+                        className="absolute left-1/2 top-1/2 h-[60px] w-[60px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                        style={{
+                          backgroundColor: "#0F0F20",
+                          border: `3px solid ${ring.color}`,
+                        }}
+                      />
+                    </span>
+                  ) : (
+                    <span
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        border: `4px solid ${ring.color}`,
+                        boxShadow: "0 0 18px rgba(255, 255, 255, 0.15)",
+                      }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -420,6 +433,16 @@ export default function Home() {
             <p className="mt-4 rounded-2xl bg-white px-4 py-4 text-center text-sm font-black text-[#3A1D00]">
               {gameStatusText}
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                resetTouchGame();
+                setStep("select");
+              }}
+              className="mt-3 w-full rounded-xl bg-[#FFEC00] px-5 py-3 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
+            >
+              ← 커피 다시 선택
+            </button>
           </div>
         )}
 
