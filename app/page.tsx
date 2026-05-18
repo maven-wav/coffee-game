@@ -150,7 +150,7 @@ export default function Home() {
 
     resultTimerRef.current = window.setTimeout(() => {
       setStep("result");
-    }, 2800);
+    }, 1800);
   }, [clearSelectTimer, syncRings]);
 
   const schedulePickWinner = useCallback(() => {
@@ -458,10 +458,19 @@ export default function Home() {
         )}
 
         {step === "result" && (
-          <div className="flex flex-1 flex-col justify-center">
+          <div className="flex flex-1 flex-col">
+            <div className="py-5 text-center">
+              <h1 className="text-2xl font-black tracking-tight text-[#111111]">
+                커피 한 잔 쏘는 날이에요 ☕
+              </h1>
+              <p className="mt-1 text-sm font-medium text-neutral-500">
+                오늘의 커피값은 당신 몫!
+              </p>
+            </div>
+
             <article className="rounded-2xl bg-white p-6 text-center shadow-sm">
               <div
-                className="mx-auto grid h-24 w-24 place-items-center overflow-hidden rounded-[2rem]"
+                className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-[2rem]"
                 style={{ backgroundColor: selectedCafe.bg }}
               >
                 <img
@@ -471,16 +480,13 @@ export default function Home() {
                 />
               </div>
 
-              <div className="mt-6 inline-flex rounded-full bg-[#FFEC00] px-4 py-2 text-sm font-black text-[#3A1D00]">
-                {selectedCafe.name} {selectedCafe.discount}% 당첨!
+              <div className="mt-4 inline-flex rounded-full bg-[#FFEC00] px-4 py-2 text-sm font-black text-[#3A1D00]">
+                {selectedCafe.name} 쏘기 당첨! 🎯
               </div>
 
-              <h1 className="mt-5 text-2xl font-black tracking-tight">
-                커피 한 잔 쏘는 날이에요 ☕
-              </h1>
               <p className="mt-3 text-sm font-medium leading-6 text-neutral-500">
                 카카오페이가 {selectedCafe.discount}% 할인으로 조금 더 달게
-                만들어드릴게요
+                만들어 드릴게요
               </p>
 
               <a
@@ -494,7 +500,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={restart}
-                className="mt-5 text-sm font-black text-neutral-500 underline underline-offset-4"
+                className="mt-3 text-sm font-black text-neutral-500 underline underline-offset-4"
               >
                 다시 하기
               </button>
