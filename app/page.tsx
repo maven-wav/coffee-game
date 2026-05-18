@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type Step = "select" | "game" | "result";
 type TouchPoint = { x: number; y: number; color: string };
@@ -50,7 +58,8 @@ const CAFES = [
 
 const RING_COLORS = ["#FFEC00", "#3CB6E3", "#7ED557", "#FF6B9D", "#FF9F43"];
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("select");
   const [selectedCafeIndex, setSelectedCafeIndex] = useState(0);
   const [rings, setRings] = useState<RingPoint[]>([]);
@@ -92,6 +101,20 @@ export default function Home() {
 
     return "손가락을 올리면 자동으로 선택됩니다";
   }, [activeTouchCount, gameStatus]);
+
+  useEffect(() => {
+    const brand = searchParams.get("brand");
+    const shared = searchParams.get("shared");
+
+    if (shared === "true" && brand !== null) {
+      const index = parseInt(brand);
+
+      if (!isNaN(index) && index >= 0 && index < CAFES.length) {
+        setSelectedCafeIndex(index);
+        setStep("result");
+      }
+    }
+  }, []);
 
   const clearSelectTimer = useCallback(() => {
     if (selectTimerRef.current) {
@@ -272,6 +295,19 @@ export default function Home() {
     resetTouchGame();
     setSelectedCafeIndex(0);
     setStep("select");
+  }
+
+  function handleShare() {
+    const url = `${window.location.origin}?brand=${selectedCafeIndex}&shared=true`;
+    const text = `나 ${selectedCafe.name} 쏘기 당첨됐어 😭\n카카오페이 굿딜로 ${selectedCafe.discount}% 할인받아서 결제해줘!`;
+
+    if (navigator.share) {
+      navigator.share({ title: "커피쏘기 게임", text, url });
+    } else {
+      navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
+        alert("링크가 복사됐어요! 친구에게 붙여넣기 해주세요 😊");
+      });
+    }
   }
 
   return (
@@ -499,6 +535,14 @@ export default function Home() {
 
               <button
                 type="button"
+                onClick={handleShare}
+                className="mt-3 w-full rounded-xl border-2 border-[#F0D800] bg-[#FEE500] px-5 py-4 text-sm font-black text-[#3A1D00] transition active:scale-[0.99]"
+              >
+                ☕ 커피 쏠 친구에게 공유하기
+              </button>
+
+              <button
+                type="button"
                 onClick={restart}
                 className="mt-3 text-sm font-black text-neutral-500 underline underline-offset-4"
               >
@@ -509,5 +553,13 @@ export default function Home() {
         )}
       </section>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }
