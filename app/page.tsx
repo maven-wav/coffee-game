@@ -54,6 +54,7 @@ export default function Home() {
   const [step, setStep] = useState<Step>("select");
   const [selectedCafeIndex, setSelectedCafeIndex] = useState(0);
   const [rings, setRings] = useState<RingPoint[]>([]);
+  const [winnerColor, setWinnerColor] = useState<string | null>(null);
   const [gameStatus, setGameStatus] = useState<"idle" | "counting" | "picked">(
     "idle",
   );
@@ -117,6 +118,7 @@ export default function Home() {
     colorIndexRef.current = 0;
     hasPickedRef.current = false;
     setRings([]);
+    setWinnerColor(null);
     setGameStatus("idle");
   }, [clearResultTimer, clearSelectTimer]);
 
@@ -130,8 +132,10 @@ export default function Home() {
     clearSelectTimer();
     hasPickedRef.current = true;
 
-    const [winnerId] =
+    const [winnerId, winnerPoint] =
       touchEntries[Math.floor(Math.random() * touchEntries.length)];
+
+    setWinnerColor(winnerPoint.color);
 
     touchesRef.current.forEach((point, id) => {
       touchesRef.current.set(id, {
@@ -344,7 +348,7 @@ export default function Home() {
               })}
             </div>
 
-            <div className="mt-auto pt-5">
+            <div className="mt-3">
               <div className="mb-2 rounded-2xl bg-white p-3 text-sm font-bold text-[#3A1D00]">
                 블루샥이 지금 최대 할인! 오늘의 추천 ☕
               </div>
@@ -369,8 +373,11 @@ export default function Home() {
 
             <div
               ref={gameZoneRef}
-              className="relative grid aspect-[9/12] w-full overflow-hidden rounded-2xl bg-[#0F0F20]"
-              style={{ touchAction: "none" }}
+              className="relative grid aspect-[9/14] w-full overflow-hidden rounded-2xl bg-[#0F0F20] transition-colors duration-300"
+              style={{
+                touchAction: "none",
+                backgroundColor: winnerColor ?? "#0F0F20",
+              }}
             >
               <div
                 className={`pointer-events-none m-auto px-8 text-center text-lg font-black leading-snug text-white transition-opacity ${
@@ -389,11 +396,11 @@ export default function Home() {
                     top: ring.y,
                     width: ring.isWinner ? 120 : 100,
                     height: ring.isWinner ? 120 : 100,
-                    opacity: ring.isDimmed ? 0.18 : 1,
+                    opacity: ring.isDimmed ? 0 : 1,
                     transform: "translate(-50%, -50%)",
                   }}
                 >
-                  {!ring.isDimmed && (
+                  {!ring.isDimmed && !ring.isWinner && (
                     <span
                       className="absolute inset-0 animate-ping rounded-full opacity-35"
                       style={{
@@ -405,15 +412,15 @@ export default function Home() {
                     <span
                       className="absolute inset-0 rounded-full"
                       style={{
-                        backgroundColor: ring.color,
-                        boxShadow: `0 0 32px ${ring.color}`,
+                        backgroundColor: "#0F0F20",
+                        boxShadow: "0 0 32px rgba(15, 15, 32, 0.35)",
                       }}
                     >
                       <span
                         className="absolute left-1/2 top-1/2 h-[60px] w-[60px] -translate-x-1/2 -translate-y-1/2 rounded-full"
                         style={{
-                          backgroundColor: "#0F0F20",
-                          border: `3px solid ${ring.color}`,
+                          backgroundColor: "transparent",
+                          border: `4px solid ${ring.color}`,
                         }}
                       />
                     </span>
@@ -430,7 +437,7 @@ export default function Home() {
               ))}
             </div>
 
-            <p className="mt-4 rounded-2xl bg-white px-4 py-4 text-center text-sm font-black text-[#3A1D00]">
+            <p className="mt-2 rounded-2xl bg-white px-4 py-4 text-center text-sm font-black text-[#3A1D00]">
               {gameStatusText}
             </p>
             <button
