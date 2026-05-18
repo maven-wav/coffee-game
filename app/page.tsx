@@ -1,228 +1,436 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type DrawHistory = {
+type Step = "select" | "game" | "result";
+type TouchPoint = { x: number; y: number; color: string };
+type RingPoint = TouchPoint & {
   id: number;
-  winner: string;
-  participants: string[];
-  createdAt: string;
+  isWinner: boolean;
+  isDimmed: boolean;
 };
 
-const starterNames = ["민수", "지은", "현우", "서연"];
+const CAFES = [
+  {
+    name: "블루샥",
+    icon: "🫐",
+    discount: 7,
+    bg: "#E8F4F0",
+    link: "https://link.kakaopay.com/u/payweb?bg_color=bg_grey&navigation=hide&url=https%3A%2F%2Fgood-deal-web.kakaopay.com%2Fpayment%2Fbrd-69cd09d9-47d86b-169a2d51fd%3FappType%3DKAKAOPAY%26f_referral_id%3DRC3571098572034610115%26isAuth%3Dfalse%26lockStatus%3Dfalse%26t_ch%3Dgooddeal-share&version=-492422463",
+  },
+  {
+    name: "메가커피",
+    icon: "☕",
+    discount: 5,
+    bg: "#FFF3E0",
+    link: "#",
+  },
+  {
+    name: "컴포즈커피",
+    icon: "🍵",
+    discount: 5,
+    bg: "#F3E5F5",
+    link: "#",
+  },
+  {
+    name: "빽다방",
+    icon: "🧃",
+    discount: 4,
+    bg: "#FFF8E1",
+    link: "#",
+  },
+  {
+    name: "이디야",
+    icon: "🌿",
+    discount: 4,
+    bg: "#E8F5E9",
+    link: "#",
+  },
+];
+
+const RING_COLORS = ["#FFEC00", "#3CB6E3", "#7ED557", "#FF6B9D", "#FF9F43"];
 
 export default function Home() {
-  const [participants, setParticipants] = useState<string[]>(starterNames);
-  const [name, setName] = useState("");
-  const [winner, setWinner] = useState<string | null>(null);
-  const [history, setHistory] = useState<DrawHistory[]>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [step, setStep] = useState<Step>("select");
+  const [selectedCafeIndex, setSelectedCafeIndex] = useState(0);
+  const [rings, setRings] = useState<RingPoint[]>([]);
+  const [gameStatus, setGameStatus] = useState<"idle" | "counting" | "picked">(
+    "idle",
+  );
 
-  const canDraw = participants.length >= 2 && !isDrawing;
+  const gameZoneRef = useRef<HTMLDivElement | null>(null);
+  const touchesRef = useRef<Map<number, RingPoint>>(new Map());
+  const selectTimerRef = useRef<number | null>(null);
+  const resultTimerRef = useRef<number | null>(null);
+  const colorIndexRef = useRef(0);
+  const hasPickedRef = useRef(false);
 
-  const participantSummary = useMemo(() => {
-    if (participants.length === 0) {
-      return "아직 참가자가 없어요";
+  const selectedCafe = CAFES[selectedCafeIndex];
+  const activeTouchCount = rings.length;
+
+  const statusBadge = useMemo(() => {
+    if (step === "select") {
+      return "커피 선택";
     }
 
-    return `${participants.length}명이 커피 운명을 기다리는 중`;
-  }, [participants.length]);
+    if (step === "game") {
+      return `${selectedCafe.name} ${selectedCafe.discount}%`;
+    }
 
-  function addParticipant(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    return "결제 연결";
+  }, [selectedCafe.discount, selectedCafe.name, step]);
 
-    const nextName = name.trim();
-    if (!nextName || participants.includes(nextName)) {
-      setName("");
+  const gameStatusText = useMemo(() => {
+    if (gameStatus === "picked") {
+      return "🎉 선택 완료!";
+    }
+
+    if (activeTouchCount >= 2) {
+      return `${activeTouchCount}명 참가 중 · 잠시 후 선택됩니다...`;
+    }
+
+    return "손가락을 올리면 자동으로 선택됩니다";
+  }, [activeTouchCount, gameStatus]);
+
+  const clearSelectTimer = useCallback(() => {
+    if (selectTimerRef.current) {
+      window.clearTimeout(selectTimerRef.current);
+      selectTimerRef.current = null;
+    }
+  }, []);
+
+  const clearResultTimer = useCallback(() => {
+    if (resultTimerRef.current) {
+      window.clearTimeout(resultTimerRef.current);
+      resultTimerRef.current = null;
+    }
+  }, []);
+
+  const syncRings = useCallback(() => {
+    setRings(Array.from(touchesRef.current.values()));
+  }, []);
+
+  const resetTouchGame = useCallback(() => {
+    clearSelectTimer();
+    clearResultTimer();
+    touchesRef.current.clear();
+    colorIndexRef.current = 0;
+    hasPickedRef.current = false;
+    setRings([]);
+    setGameStatus("idle");
+  }, [clearResultTimer, clearSelectTimer]);
+
+  const pickWinner = useCallback(() => {
+    const touchEntries = Array.from(touchesRef.current.entries());
+
+    if (touchEntries.length < 2 || hasPickedRef.current) {
       return;
     }
 
-    setParticipants((current) => [...current, nextName]);
-    setName("");
-    setWinner(null);
-  }
+    clearSelectTimer();
+    hasPickedRef.current = true;
 
-  function removeParticipant(targetName: string) {
-    setParticipants((current) => current.filter((item) => item !== targetName));
-    setWinner((currentWinner) =>
-      currentWinner === targetName ? null : currentWinner,
-    );
-  }
+    const [winnerId] =
+      touchEntries[Math.floor(Math.random() * touchEntries.length)];
 
-  function drawCoffeeBuyer() {
-    if (!canDraw) {
+    touchesRef.current.forEach((point, id) => {
+      touchesRef.current.set(id, {
+        ...point,
+        color: id === winnerId ? "#FFEC00" : point.color,
+        isWinner: id === winnerId,
+        isDimmed: id !== winnerId,
+      });
+    });
+
+    syncRings();
+    setGameStatus("picked");
+
+    resultTimerRef.current = window.setTimeout(() => {
+      setStep("result");
+    }, 800);
+  }, [clearSelectTimer, syncRings]);
+
+  const schedulePickWinner = useCallback(() => {
+    clearSelectTimer();
+
+    if (touchesRef.current.size >= 2 && !hasPickedRef.current) {
+      setGameStatus("counting");
+      selectTimerRef.current = window.setTimeout(pickWinner, 1800);
       return;
     }
 
-    setIsDrawing(true);
-    setWinner(null);
+    setGameStatus("idle");
+  }, [clearSelectTimer, pickWinner]);
 
-    window.setTimeout(() => {
-      const selected =
-        participants[Math.floor(Math.random() * participants.length)];
-      const createdAt = new Intl.DateTimeFormat("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date());
+  useEffect(() => {
+    if (step !== "game") {
+      return;
+    }
 
-      setWinner(selected);
-      setHistory((current) => [
-        {
-          id: Date.now(),
-          winner: selected,
-          participants,
-          createdAt,
-        },
-        ...current.slice(0, 4),
-      ]);
-      setIsDrawing(false);
-    }, 900);
+    const gameZone = gameZoneRef.current;
+    if (!gameZone) {
+      return;
+    }
+
+    function handleTouchStart(event: TouchEvent) {
+      event.preventDefault();
+
+      if (hasPickedRef.current || !gameZone) {
+        return;
+      }
+
+      const rect = gameZone.getBoundingClientRect();
+
+      for (const touch of Array.from(event.changedTouches)) {
+        const color = RING_COLORS[colorIndexRef.current % RING_COLORS.length];
+        colorIndexRef.current += 1;
+
+        touchesRef.current.set(touch.identifier, {
+          id: touch.identifier,
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top,
+          color,
+          isWinner: false,
+          isDimmed: false,
+        });
+      }
+
+      syncRings();
+      schedulePickWinner();
+    }
+
+    function handleTouchEnd(event: TouchEvent) {
+      event.preventDefault();
+
+      if (hasPickedRef.current) {
+        return;
+      }
+
+      for (const touch of Array.from(event.changedTouches)) {
+        touchesRef.current.delete(touch.identifier);
+      }
+
+      syncRings();
+      schedulePickWinner();
+    }
+
+    gameZone.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    gameZone.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+    return () => {
+      gameZone.removeEventListener("touchstart", handleTouchStart);
+      gameZone.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [schedulePickWinner, step, syncRings]);
+
+  useEffect(() => {
+    return () => {
+      clearSelectTimer();
+      clearResultTimer();
+    };
+  }, [clearResultTimer, clearSelectTimer]);
+
+  function startGame() {
+    resetTouchGame();
+    setStep("game");
   }
 
-  function resetGame() {
-    setParticipants(starterNames);
-    setWinner(null);
-    setHistory([]);
-    setName("");
-    setIsDrawing(false);
+  function restart() {
+    resetTouchGame();
+    setSelectedCafeIndex(0);
+    setStep("select");
   }
 
   return (
-    <main className="min-h-screen bg-[#f7efe3] text-[#2d1b12]">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[#9b5a2e]">
-              Coffee Game
-            </p>
-            <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
-              오늘 커피는 누가 쏠까?
-            </h1>
-          </div>
-          <button
-            type="button"
-            onClick={resetGame}
-            className="rounded-full border border-[#2d1b12]/15 bg-white/70 px-5 py-3 text-sm font-bold shadow-sm transition hover:-translate-y-0.5 hover:bg-white"
-          >
-            처음부터
-          </button>
+    <main className="min-h-dvh bg-[#F7F7F7] text-[#111111]">
+      <section className="mx-auto flex min-h-dvh w-full max-w-[360px] flex-col px-4 py-4">
+        <header className="flex items-center justify-between rounded-2xl bg-[#FFEC00] px-4 py-3 text-[#3A1D00] shadow-sm">
+          <p className="text-sm font-black tracking-tight">
+            kakaopay gooddeal
+          </p>
+          <span className="rounded-full bg-white/75 px-3 py-1 text-[11px] font-bold">
+            {statusBadge}
+          </span>
         </header>
 
-        <div className="grid flex-1 gap-6 py-8 lg:grid-cols-[1fr_380px]">
-          <section className="relative overflow-hidden rounded-[2rem] bg-[#3b2417] p-6 text-white shadow-2xl shadow-[#6f3c18]/20 sm:p-10">
-            <div className="absolute right-8 top-8 h-32 w-32 rounded-full bg-[#f7b267]/20 blur-3xl" />
-            <div className="absolute bottom-0 left-8 h-44 w-44 rounded-full bg-[#d4a373]/20 blur-3xl" />
+        <div className="flex justify-center py-5 text-lg font-black text-[#3A1D00]">
+          {step === "select" ? "●" : "○"}
+          <span className="px-2 text-[#B8B8B8]">—</span>
+          {step === "game" ? "●" : "○"}
+          <span className="px-2 text-[#B8B8B8]">—</span>
+          {step === "result" ? "●" : "○"}
+        </div>
 
-            <div className="relative z-10 flex h-full flex-col justify-between gap-10">
-              <div>
-                <p className="text-sm font-semibold text-[#f7d7b1]">
-                  {participantSummary}
-                </p>
-                <div className="mt-10 rounded-[1.5rem] border border-white/10 bg-white/10 p-6 backdrop-blur">
-                  <p className="text-sm font-semibold text-[#f7d7b1]">
-                    오늘의 당첨자
-                  </p>
-                  <div className="mt-4 min-h-36">
-                    {isDrawing ? (
-                      <div className="flex h-36 items-center justify-center">
-                        <div className="h-20 w-20 animate-spin rounded-full border-8 border-[#f7d7b1]/20 border-t-[#f7d7b1]" />
-                      </div>
-                    ) : winner ? (
-                      <div>
-                        <p className="text-6xl font-black tracking-tight sm:text-8xl">
-                          {winner}
-                        </p>
-                        <p className="mt-4 text-lg text-[#f7d7b1]">
-                          축하합니다. 오늘 커피는 시원하게 한 잔 쏘기!
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-5xl font-black tracking-tight sm:text-7xl">
-                          Ready?
-                        </p>
-                        <p className="mt-4 text-lg text-[#f7d7b1]">
-                          참가자 2명 이상이면 바로 추첨할 수 있어요.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+        {step === "select" && (
+          <div className="flex flex-1 flex-col">
+            <div className="mb-5">
+              <h1 className="text-2xl font-black tracking-tight">
+                어떤 커피로 내기할까요?
+              </h1>
+              <p className="mt-2 text-sm font-medium text-neutral-500">
+                카카오페이 굿딜 혜택을 고르고 손가락 게임을 시작하세요.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {CAFES.map((cafe, index) => {
+                const isSelected = selectedCafeIndex === index;
+
+                return (
+                  <button
+                    key={cafe.name}
+                    type="button"
+                    onClick={() => setSelectedCafeIndex(index)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition active:scale-[0.99] ${
+                      isSelected
+                        ? "border-[#3A1D00] bg-[#FFFDE7]"
+                        : "border-transparent bg-white"
+                    }`}
+                  >
+                    <span
+                      className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-2xl"
+                      style={{ backgroundColor: cafe.bg }}
+                    >
+                      {cafe.icon}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-base font-black">
+                        {cafe.name}
+                      </span>
+                      <span className="block text-xs font-semibold text-neutral-500">
+                        카카오페이 굿딜
+                      </span>
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-sm font-black ${
+                        cafe.name === "블루샥"
+                          ? "bg-[#FFEC00] text-[#3A1D00]"
+                          : "bg-neutral-100 text-neutral-700"
+                      }`}
+                    >
+                      {cafe.discount}% 할인
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-auto pt-5">
+              <div className="mb-3 rounded-2xl bg-white p-4 text-sm font-bold text-[#3A1D00]">
+                블루샥이 지금 최대 할인! 오늘의 추천 ☕
               </div>
+              <button
+                type="button"
+                onClick={startGame}
+                className="w-full rounded-xl bg-[#FFEC00] px-5 py-4 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
+              >
+                게임 시작 →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "game" && (
+          <div className="flex flex-1 flex-col">
+            <div className="mb-4 text-center">
+              <h1 className="text-2xl font-black tracking-tight">
+                손가락 내기 게임
+              </h1>
+              <p className="mt-2 text-sm font-medium text-neutral-500">
+                Chwazi처럼 모두 동시에 화면을 눌러주세요.
+              </p>
+            </div>
+
+            <div
+              ref={gameZoneRef}
+              className="relative grid aspect-[9/10] w-full overflow-hidden rounded-2xl bg-[#0F0F20]"
+              style={{ touchAction: "none" }}
+            >
+              <div
+                className={`pointer-events-none m-auto px-8 text-center text-lg font-black leading-snug text-white transition-opacity ${
+                  activeTouchCount > 0 ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                모두 손가락을 화면에 올려주세요
+              </div>
+
+              {rings.map((ring) => (
+                <div
+                  key={ring.id}
+                  className="pointer-events-none absolute rounded-full transition-all duration-300"
+                  style={{
+                    left: ring.x,
+                    top: ring.y,
+                    width: ring.isWinner ? 90 : 72,
+                    height: ring.isWinner ? 90 : 72,
+                    border: `4px solid ${
+                      ring.isWinner ? "#FFEC00" : ring.color
+                    }`,
+                    opacity: ring.isDimmed ? 0.18 : 1,
+                    transform: "translate(-50%, -50%)",
+                    boxShadow: ring.isWinner
+                      ? "0 0 32px rgba(255, 236, 0, 0.75)"
+                      : "0 0 18px rgba(255, 255, 255, 0.15)",
+                  }}
+                />
+              ))}
+            </div>
+
+            <p className="mt-4 rounded-2xl bg-white px-4 py-4 text-center text-sm font-black text-[#3A1D00]">
+              {gameStatusText}
+            </p>
+          </div>
+        )}
+
+        {step === "result" && (
+          <div className="flex flex-1 flex-col justify-center">
+            <article className="rounded-2xl bg-white p-6 text-center shadow-sm">
+              <div
+                className="mx-auto grid h-24 w-24 place-items-center rounded-[2rem] text-6xl"
+                style={{ backgroundColor: selectedCafe.bg }}
+              >
+                {selectedCafe.icon}
+              </div>
+
+              <div className="mt-6 inline-flex rounded-full bg-[#FFEC00] px-4 py-2 text-sm font-black text-[#3A1D00]">
+                {selectedCafe.name} {selectedCafe.discount}% 당첨!
+              </div>
+
+              <h1 className="mt-5 text-2xl font-black tracking-tight">
+                커피 한 잔 쏘는 날이에요 ☕
+              </h1>
+              <p className="mt-3 text-sm font-medium leading-6 text-neutral-500">
+                카카오페이가 {selectedCafe.discount}% 할인으로 조금 더 달게
+                만들어드릴게요
+              </p>
+
+              <a
+                href={selectedCafe.link}
+                className="mt-7 block w-full rounded-xl bg-[#FFEC00] px-5 py-4 text-sm font-black leading-5 text-[#3A1D00] transition active:scale-[0.99]"
+              >
+                굿딜로 {selectedCafe.name} {selectedCafe.discount}% 할인받고
+                결제하기
+              </a>
 
               <button
                 type="button"
-                onClick={drawCoffeeBuyer}
-                disabled={!canDraw}
-                className="rounded-full bg-[#ffb703] px-8 py-5 text-xl font-black text-[#2d1b12] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:bg-[#ffc83d] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                className="mt-3 w-full rounded-xl bg-neutral-200 px-5 py-4 text-sm font-black text-neutral-800 transition active:scale-[0.99]"
               >
-                {isDrawing ? "추첨 중..." : "커피 쏠 사람 뽑기"}
+                카카오페이로 송금 요청하기
               </button>
-            </div>
-          </section>
 
-          <aside className="flex flex-col gap-6">
-            <section className="rounded-[2rem] bg-white p-6 shadow-xl shadow-[#6f3c18]/10">
-              <h2 className="text-xl font-black">참가자</h2>
-              <form onSubmit={addParticipant} className="mt-4 flex gap-2">
-                <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="이름 입력"
-                  className="min-w-0 flex-1 rounded-full border border-[#2d1b12]/10 bg-[#f7efe3] px-4 py-3 outline-none transition focus:border-[#9b5a2e]"
-                />
-                <button
-                  type="submit"
-                  className="rounded-full bg-[#2d1b12] px-5 py-3 font-bold text-white transition hover:bg-[#4a2b1b]"
-                >
-                  추가
-                </button>
-              </form>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {participants.map((participant) => (
-                  <button
-                    key={participant}
-                    type="button"
-                    onClick={() => removeParticipant(participant)}
-                    className="rounded-full bg-[#f7efe3] px-4 py-2 text-sm font-bold transition hover:bg-[#ead7bf]"
-                    title="클릭하면 참가자에서 제외됩니다"
-                  >
-                    {participant} ×
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-[2rem] bg-white p-6 shadow-xl shadow-[#6f3c18]/10">
-              <h2 className="text-xl font-black">최근 결과</h2>
-              <div className="mt-4 space-y-3">
-                {history.length > 0 ? (
-                  history.map((item) => (
-                    <article
-                      key={item.id}
-                      className="rounded-2xl border border-[#2d1b12]/10 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-lg font-black">{item.winner}</p>
-                        <time className="text-xs font-semibold text-[#9b5a2e]">
-                          {item.createdAt}
-                        </time>
-                      </div>
-                      <p className="mt-2 text-sm text-[#6f4b37]">
-                        {item.participants.join(", ")}
-                      </p>
-                    </article>
-                  ))
-                ) : (
-                  <p className="rounded-2xl bg-[#f7efe3] p-4 text-sm font-semibold text-[#6f4b37]">
-                    아직 추첨 기록이 없어요.
-                  </p>
-                )}
-              </div>
-            </section>
-          </aside>
-        </div>
+              <button
+                type="button"
+                onClick={restart}
+                className="mt-5 text-sm font-black text-neutral-500 underline underline-offset-4"
+              >
+                다시 하기
+              </button>
+            </article>
+          </div>
+        )}
       </section>
     </main>
   );
