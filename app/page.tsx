@@ -150,7 +150,7 @@ export default function Home() {
 
     resultTimerRef.current = window.setTimeout(() => {
       setStep("result");
-    }, 800);
+    }, 2800);
   }, [clearSelectTimer, syncRings]);
 
   const schedulePickWinner = useCallback(() => {
@@ -482,13 +482,6 @@ export default function Home() {
                 굿딜로 {selectedCafe.name} {selectedCafe.discount}% 할인받고
                 결제하기
               </a>
-
-              <button
-                type="button"
-                className="mt-3 w-full rounded-xl bg-neutral-200 px-5 py-4 text-sm font-black text-neutral-800 transition active:scale-[0.99]"
-              >
-                카카오페이로 송금 요청하기
-              </button>
 
               <button
                 type="button"
