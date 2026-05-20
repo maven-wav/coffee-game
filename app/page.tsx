@@ -1,6 +1,7 @@
 "use client";
 
 import AnimalRace from "./components/AnimalRace";
+import ScreenBox from "./components/ScreenBox";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import {
@@ -382,7 +383,7 @@ function HomeContent() {
         </div>
 
         {step === "select" && (
-          <div className="flex flex-1 flex-col">
+          <ScreenBox variant="light">
             <div className="mb-5">
               <h1 className="text-xl font-black tracking-tight">
                 어떤 커피로 내기할까요?
@@ -442,11 +443,11 @@ function HomeContent() {
                 게임 시작 →
               </button>
             </div>
-          </div>
+          </ScreenBox>
         )}
 
         {step === "gameSelect" && (
-          <div className="flex flex-1 flex-col bg-white">
+          <ScreenBox variant="light">
             <h1 className="text-[20px] font-medium text-[#111111]">
               어떤 게임으로 정할까요?
             </h1>
@@ -500,7 +501,7 @@ function HomeContent() {
             >
               ← 커피 다시 선택
             </button>
-          </div>
+          </ScreenBox>
         )}
 
         {step === "game" && gameMode === "animal" && (
@@ -517,12 +518,10 @@ function HomeContent() {
         )}
 
         {step === "game" && gameMode === "finger" && (
-          <div className="flex flex-1 flex-col">
-            <div className="mb-4 text-center">
-              <h1 className="text-2xl font-black tracking-tight">
-                손가락 내기 게임
-              </h1>
-            </div>
+          <ScreenBox variant="dark">
+            <h1 className="mb-4 text-center text-xl font-black text-white">
+              손가락 내기 게임
+            </h1>
 
             <div
               ref={gameZoneRef}
@@ -590,7 +589,7 @@ function HomeContent() {
               ))}
             </div>
 
-            <p className="mt-2 rounded-2xl bg-white px-4 py-4 text-center text-sm font-black text-[#3A1D00]">
+            <p className="mt-2 rounded-xl bg-[rgba(255,255,255,0.08)] px-4 py-4 text-center text-sm font-black text-white">
               {gameStatusText}
             </p>
             <button
@@ -604,12 +603,12 @@ function HomeContent() {
             >
               ← 커피 다시 선택
             </button>
-          </div>
+          </ScreenBox>
         )}
 
         {step === "result" && (
-          <div className="flex flex-1 flex-col">
-            <div className="py-5 text-center">
+          <ScreenBox variant="light">
+            <div className="text-center">
               <h1 className="text-2xl font-black tracking-tight text-[#111111]">
                 커피 한 잔 쏘는 날이에요 ☕
               </h1>
@@ -618,7 +617,7 @@ function HomeContent() {
               </p>
             </div>
 
-            <article className="rounded-2xl bg-white p-6 text-center shadow-sm">
+            <div className="mt-5 text-center">
               <div
                 className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-[2rem]"
                 style={{ backgroundColor: selectedCafe.bg }}
@@ -671,8 +670,8 @@ function HomeContent() {
               >
                 다시 하기
               </button>
-            </article>
-          </div>
+            </div>
+          </ScreenBox>
         )}
       </section>
 

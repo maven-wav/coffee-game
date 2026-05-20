@@ -1,5 +1,6 @@
 "use client";
 
+import ScreenBox from "./ScreenBox";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const ANIMALS = [
@@ -68,11 +69,7 @@ function rankBadgeStyle(rank: number, total: number) {
   return { bg: "#333355", text: "#FFFFFF", extra: "" };
 }
 
-export default function AnimalRace({
-  selectedCafe,
-  onComplete,
-  onBack,
-}: AnimalRaceProps) {
+export default function AnimalRace({ onComplete, onBack }: AnimalRaceProps) {
   const [phase, setPhase] = useState<Phase>("setup");
   const [playerCount, setPlayerCount] = useState(4);
   const [names, setNames] = useState<string[]>(["", "", "", ""]);
@@ -235,27 +232,13 @@ export default function AnimalRace({
     }, 50);
   }
 
-  function handleRetry() {
-    clearRaceInterval();
-    clearEventTimers();
-    setPhase("setup");
-    setParticipants([]);
-    setRevealedCount(0);
-    setRacers([]);
-    setResults([]);
-    finishCounterRef.current = 0;
-    raceEndedRef.current = false;
-    setFinishCounter(0);
-  }
-
   const loser = results[results.length - 1];
-  const podium = results.slice(0, 3);
   const podiumMedals = ["🥇", "🥈", "🥉"];
 
   if (phase === "setup") {
     return (
-      <div className="flex flex-1 flex-col bg-white px-1 py-2">
-        <h2 className="text-center text-lg font-bold text-[#111111]">
+      <ScreenBox variant="dark">
+        <h2 className="text-center text-lg font-bold text-white">
           몇 명이서 하나요?
         </h2>
         <div className="mt-6 flex items-center justify-center gap-6">
@@ -263,18 +246,18 @@ export default function AnimalRace({
             type="button"
             onClick={() => setPlayerCount((c) => Math.max(2, c - 1))}
             disabled={playerCount <= 2}
-            className="grid h-11 w-11 place-items-center rounded-full bg-[#F7F7F7] text-xl font-bold text-[#111111] disabled:opacity-40"
+            className="grid h-11 w-11 place-items-center rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.1)] text-xl font-bold text-white disabled:opacity-40"
+            style={{ borderWidth: "0.5px" }}
           >
             −
           </button>
-          <span className="text-5xl font-black text-[#FFEC00] drop-shadow-sm">
-            {playerCount}
-          </span>
+          <span className="text-5xl font-black text-[#FFEC00]">{playerCount}</span>
           <button
             type="button"
             onClick={() => setPlayerCount((c) => Math.min(8, c + 1))}
             disabled={playerCount >= 8}
-            className="grid h-11 w-11 place-items-center rounded-full bg-[#F7F7F7] text-xl font-bold text-[#111111] disabled:opacity-40"
+            className="grid h-11 w-11 place-items-center rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.1)] text-xl font-bold text-white disabled:opacity-40"
+            style={{ borderWidth: "0.5px" }}
           >
             +
           </button>
@@ -284,7 +267,7 @@ export default function AnimalRace({
           {names.map((name, index) => (
             <li key={index} className="flex items-center gap-3">
               <span
-                className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-xl border border-dashed border-[#D0D0D0] bg-[#F7F7F7] text-lg text-[#BBBBBB]"
+                className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-xl border border-dashed border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.04)] text-lg text-[#FF6B6B]"
                 aria-hidden
               >
                 ❓
@@ -298,13 +281,14 @@ export default function AnimalRace({
                   setNames(next);
                 }}
                 placeholder={`${index + 1}번 참가자 이름`}
-                className="min-w-0 flex-1 rounded-xl border border-[#E8E8E8] bg-white px-3 py-3 text-sm text-[#111111] outline-none placeholder:text-[#BBBBBB] focus:border-[#FFEC00]"
+                className="min-w-0 flex-1 rounded-xl border border-[rgba(255,255,255,0.15)] bg-[rgba(0,0,0,0.25)] px-3 py-3 text-sm text-white outline-none placeholder:text-[rgba(255,255,255,0.4)] focus:border-[#FFEC00]"
+                style={{ borderWidth: "0.5px" }}
               />
             </li>
           ))}
         </ul>
 
-        <p className="mt-4 text-center text-xs text-[#999999]">
+        <p className="mt-4 text-center text-xs text-[rgba(255,255,255,0.35)]">
           레디하면 동물이 랜덤 공개돼요
         </p>
 
@@ -320,18 +304,18 @@ export default function AnimalRace({
           <button
             type="button"
             onClick={onBack}
-            className="mt-4 text-center text-sm font-medium text-[#999999] underline underline-offset-4"
+            className="mt-4 text-center text-sm font-medium text-[rgba(255,255,255,0.3)] underline underline-offset-4"
           >
             ← 게임 선택으로
           </button>
         )}
-      </div>
+      </ScreenBox>
     );
   }
 
   if (phase === "reveal") {
     return (
-      <div className="-mx-4 flex flex-1 flex-col bg-[#0F0F20] px-4 py-6">
+      <ScreenBox variant="dark">
         <h2 className="text-center text-lg font-bold text-white">
           내 동물은...?! 🎲
         </h2>
@@ -339,7 +323,7 @@ export default function AnimalRace({
           {participants.map((p, index) => (
             <div
               key={p.id}
-              className="rounded-[14px] bg-[#1A1A2E] p-4 text-center transition-all duration-300"
+              className="rounded-[14px] bg-[rgba(0,0,0,0.25)] p-4 text-center transition-all duration-300"
               style={{
                 opacity: index < revealedCount ? 1 : 0,
                 transform: index < revealedCount ? "scale(1)" : "scale(0.8)",
@@ -361,7 +345,7 @@ export default function AnimalRace({
         >
           🏁 경주 시작!
         </button>
-      </div>
+      </ScreenBox>
     );
   }
 
@@ -369,17 +353,16 @@ export default function AnimalRace({
     const sorted = [...racers].sort((a, b) => b.position - a.position);
 
     return (
-      <div className="-mx-4 flex flex-1 flex-col bg-[#0F0F20] px-4 py-4">
-        <p className="mb-3 text-center text-sm font-bold text-neutral-400">
+      <ScreenBox variant="dark">
+        <p className="mb-3 text-center text-sm font-bold text-[rgba(255,255,255,0.5)]">
           완주 {finishCounter} / {participants.length}
         </p>
-        <div className="space-y-3 rounded-2xl bg-[#1A1A2E] p-3">
+        <div className="space-y-3 rounded-xl bg-[#0F0F20] p-2">
           {participants.map((p) => {
             const racer = racers.find((r) => r.id === p.id);
             if (!racer) return null;
 
-            const rank =
-              sorted.findIndex((r) => r.id === p.id) + 1;
+            const rank = sorted.findIndex((r) => r.id === p.id) + 1;
             const badge = rankBadgeStyle(rank, participants.length);
 
             return (
@@ -400,7 +383,7 @@ export default function AnimalRace({
                     {rank}
                     {badge.extra}
                   </span>
-                  <div className="relative h-10 min-w-0 flex-1 overflow-hidden rounded-lg bg-[#0F0F20]">
+                  <div className="relative h-10 min-w-0 flex-1 overflow-hidden rounded-lg bg-[rgba(0,0,0,0.35)]">
                     <span
                       className="absolute top-1/2 -translate-y-1/2 text-2xl transition-[left] duration-75"
                       style={{ left: `calc(${racer.position}% - 14px)` }}
@@ -416,48 +399,57 @@ export default function AnimalRace({
             );
           })}
         </div>
-      </div>
+      </ScreenBox>
     );
   }
 
   return (
-    <div className="-mx-4 flex flex-1 flex-col bg-[#0F0F20] px-4 py-6">
+    <ScreenBox variant="dark">
+      <h2 className="text-center text-lg font-bold text-white">경주 결과 🏆</h2>
+
       {loser && (
-        <div className="rounded-2xl bg-[#E24B4A] p-5 text-center">
+        <div
+          className="mt-5 rounded-2xl border p-5 text-center"
+          style={{
+            backgroundColor: "rgba(226, 75, 74, 0.15)",
+            borderColor: "rgba(226, 75, 74, 0.4)",
+          }}
+        >
           <span className="text-5xl">{loser.animal.emoji}</span>
-          <p className="mt-2 text-sm font-bold text-white/90">
+          <span className="mt-3 inline-flex rounded-full bg-[#E24B4A] px-3 py-1 text-xs font-bold text-white">
             꼴등 — 커피 쏘는 사람
+          </span>
+          <p className="mt-3 text-xl font-black text-white">{loser.name}</p>
+          <p className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">
+            {loser.animal.emoji} {loser.animal.name}
           </p>
-          <p className="mt-1 text-xl font-black text-white">{loser.name}</p>
         </div>
       )}
 
-      <ul className="mt-5 space-y-2">
-        {podium.map((p, i) => (
-          <li
-            key={p.id}
-            className="flex items-center gap-3 rounded-xl bg-[#1A1A2E] px-4 py-3"
-          >
-            <span className="text-xl">{podiumMedals[i]}</span>
-            <span className="text-2xl">{p.animal.emoji}</span>
-            <span className="flex-1 text-sm font-bold text-white">
-              {p.name}
-            </span>
-            <span className="text-xs text-[#FFEC00]">{p.animal.name}</span>
-          </li>
-        ))}
-        {results.slice(3, -1).map((p) => {
-          const place = results.indexOf(p) + 1;
+      <ul className="mt-5 overflow-hidden rounded-xl bg-[rgba(0,0,0,0.25)]">
+        {results.map((p, index) => {
+          const medal =
+            index < 3 ? podiumMedals[index] : `${index + 1}`;
+          const isLast = index < results.length - 1;
+
           return (
             <li
               key={p.id}
-              className="flex items-center gap-3 rounded-xl bg-[#1A1A2E] px-4 py-2.5"
+              className={`flex items-center gap-3 px-4 py-3 ${
+                isLast ? "border-b border-[rgba(255,255,255,0.08)]" : ""
+              }`}
+              style={{ borderBottomWidth: isLast ? "0.5px" : undefined }}
             >
-              <span className="w-6 text-center text-sm font-bold text-neutral-500">
-                {place}
+              <span className="w-6 text-center text-sm font-bold text-[rgba(255,255,255,0.5)]">
+                {medal}
               </span>
               <span className="text-xl">{p.animal.emoji}</span>
-              <span className="flex-1 text-sm text-white">{p.name}</span>
+              <span className="flex-1 text-sm font-bold text-white">
+                {p.name}
+              </span>
+              <span className="text-xs text-[rgba(255,255,255,0.4)]">
+                {p.animal.name}
+              </span>
             </li>
           );
         })}
@@ -465,19 +457,11 @@ export default function AnimalRace({
 
       <button
         type="button"
-        onClick={handleRetry}
-        className="mt-6 w-full rounded-xl border-2 border-[#FFEC00] bg-transparent px-5 py-3 text-sm font-black text-[#FFEC00]"
-      >
-        ↩ 다시 하기
-      </button>
-
-      <a
-        href={selectedCafe.link}
         onClick={() => onComplete?.()}
-        className="mt-3 block w-full rounded-xl bg-[#FFEC00] px-5 py-4 text-center text-sm font-black text-[#3A1D00] transition active:scale-[0.99]"
+        className="mt-6 w-full rounded-xl bg-[#FFEC00] px-5 py-4 text-sm font-black text-[#3A1D00] transition active:scale-[0.99]"
       >
-        카카오페이 굿딜로 결제하기 ☕
-      </a>
-    </div>
+        결과에 승복하러 가기 ☕
+      </button>
+    </ScreenBox>
   );
 }
