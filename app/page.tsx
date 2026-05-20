@@ -1,6 +1,6 @@
 "use client";
 
-import PirateRoulette from "./components/PirateRoulette";
+import AnimalRace from "./components/AnimalRace";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import {
@@ -14,7 +14,8 @@ import {
 
 const SHARE_URL = "https://coffee-game-chi.vercel.app";
 
-type Step = "select" | "gameSelect" | "game" | "pirate" | "result";
+type Step = "select" | "gameSelect" | "game" | "result";
+type GameMode = "finger" | "animal" | null;
 type TouchPoint = { x: number; y: number; color: string };
 type RingPoint = TouchPoint & {
   id: number;
@@ -86,6 +87,7 @@ const RING_COLORS = ["#FFEC00", "#3CB6E3", "#7ED557", "#FF6B9D", "#FF9F43"];
 function HomeContent() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("select");
+  const [gameMode, setGameMode] = useState<GameMode>(null);
   const [selectedCafeIndex, setSelectedCafeIndex] = useState(0);
   const [rings, setRings] = useState<RingPoint[]>([]);
   const [winnerColor, setWinnerColor] = useState<string | null>(null);
@@ -115,7 +117,7 @@ function HomeContent() {
       return "게임 선택";
     }
 
-    if (step === "game" || step === "pirate") {
+    if (step === "game") {
       return `${selectedCafe.name} ${selectedCafe.discount}%`;
     }
 
@@ -330,15 +332,18 @@ function HomeContent() {
 
   function startFingerGame() {
     resetTouchGame();
+    setGameMode("finger");
     setStep("game");
   }
 
-  function startPirateGame() {
-    setStep("pirate");
+  function startAnimalGame() {
+    setGameMode("animal");
+    setStep("game");
   }
 
   function restart() {
     resetTouchGame();
+    setGameMode(null);
     setSelectedCafeIndex(0);
     setStep("select");
   }
@@ -371,9 +376,7 @@ function HomeContent() {
         <div className="flex justify-center py-3 text-lg font-black text-[#3A1D00]">
           {step === "select" ? "●" : "○"}
           <span className="px-2 text-[#B8B8B8]">—</span>
-          {step === "gameSelect" || step === "game" || step === "pirate"
-            ? "●"
-            : "○"}
+          {step === "gameSelect" || step === "game" ? "●" : "○"}
           <span className="px-2 text-[#B8B8B8]">—</span>
           {step === "result" ? "●" : "○"}
         </div>
@@ -443,51 +446,77 @@ function HomeContent() {
         )}
 
         {step === "gameSelect" && (
-          <div className="-mx-4 flex flex-1 flex-col bg-[#0F0F20] px-4 py-6">
-            <h1 className="text-center text-[20px] font-bold text-white">
+          <div className="flex flex-1 flex-col bg-white">
+            <h1 className="text-[20px] font-medium text-[#111111]">
               어떤 게임으로 정할까요?
             </h1>
-            <div className="mt-6 flex flex-1 flex-col gap-4">
+            <p className="mt-1 text-[13px] text-[#999999]">
+              게임을 골라 내기를 시작하세요
+            </p>
+            <div className="mt-5 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={startFingerGame}
-                className="rounded-2xl bg-[#1A1A2E] p-5 text-left transition active:scale-[0.99]"
+                className="flex w-full items-center gap-3 rounded-2xl border border-[#E8E8E8] px-4 py-[18px] text-left transition active:scale-[0.99]"
+                style={{ borderWidth: "0.5px" }}
               >
-                <span className="text-3xl">👆</span>
-                <p className="mt-3 text-lg font-black text-white">손가락 내기</p>
-                <p className="mt-1 text-sm font-medium text-neutral-400">
-                  다같이 손가락 올리고 뽑기
-                </p>
+                <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-xl bg-[#F7F7F7] text-2xl">
+                  👆
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-medium text-[#111111]">
+                    손가락 내기
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[#999999]">
+                    다같이 손가락 올리고 뽑기
+                  </span>
+                </span>
+                <span className="text-xl text-[#cccccc]">›</span>
               </button>
               <button
                 type="button"
-                onClick={startPirateGame}
-                className="rounded-2xl bg-[#1A1A2E] p-5 text-left transition active:scale-[0.99]"
+                onClick={startAnimalGame}
+                className="flex w-full items-center gap-3 rounded-2xl border border-[#E8E8E8] px-4 py-[18px] text-left transition active:scale-[0.99]"
+                style={{ borderWidth: "0.5px" }}
               >
-                <span className="text-3xl">🗡️</span>
-                <p className="mt-3 text-lg font-black text-white">해적룰렛</p>
-                <p className="mt-1 text-sm font-medium text-neutral-400">
-                  폰 돌려가며 칼 꽂기, 터지면 당첨
-                </p>
+                <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-xl bg-[#F7F7F7] text-2xl">
+                  🐢
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-medium text-[#111111]">
+                    동물 경주
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[#999999]">
+                    랜덤 동물 배정, 꼴등이 커피 쏜다
+                  </span>
+                </span>
+                <span className="text-xl text-[#cccccc]">›</span>
               </button>
             </div>
             <button
               type="button"
               onClick={() => setStep("select")}
-              className="mt-4 text-sm font-bold text-neutral-500 underline underline-offset-4"
+              className="mt-auto pt-6 text-sm font-medium text-[#999999] underline underline-offset-4"
             >
               ← 커피 다시 선택
             </button>
           </div>
         )}
 
-        {step === "pirate" && (
-          <div className="-mx-4 flex min-h-0 flex-1 flex-col">
-            <PirateRoulette onComplete={() => setStep("result")} />
+        {step === "game" && gameMode === "animal" && (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <AnimalRace
+              selectedCafe={selectedCafe}
+              onComplete={() => setStep("result")}
+              onBack={() => {
+                setGameMode(null);
+                setStep("gameSelect");
+              }}
+            />
           </div>
         )}
 
-        {step === "game" && (
+        {step === "game" && gameMode === "finger" && (
           <div className="flex flex-1 flex-col">
             <div className="mb-4 text-center">
               <h1 className="text-2xl font-black tracking-tight">
@@ -568,6 +597,7 @@ function HomeContent() {
               type="button"
               onClick={() => {
                 resetTouchGame();
+                setGameMode(null);
                 setStep("gameSelect");
               }}
               className="mt-3 w-full rounded-xl bg-[#FFEC00] px-5 py-3 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
