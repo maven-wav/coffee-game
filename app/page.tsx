@@ -364,8 +364,8 @@ function HomeContent() {
 
   return (
     <main className="min-h-dvh bg-[#F7F7F7] text-[#111111]">
-      <section className="mx-auto flex min-h-dvh w-full max-w-[360px] flex-col px-4 py-4">
-        <header className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFEC00] px-4 py-3 text-[#3A1D00] shadow-sm">
+      <section className="mx-auto flex min-h-dvh w-full max-w-[360px] flex-col py-4">
+        <header className="mx-[4px] flex items-center justify-between gap-3 rounded-2xl bg-[#FFEC00] px-4 py-3 text-[#3A1D00] shadow-sm">
           <p className="min-w-0 flex-1 text-[13px] font-black leading-tight tracking-tight">
             커피내기하고 굿딜로 할인받기
           </p>
