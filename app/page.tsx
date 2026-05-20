@@ -1,6 +1,8 @@
 "use client";
 
+import PirateRoulette from "./components/PirateRoulette";
 import { useSearchParams } from "next/navigation";
+import QRCode from "qrcode";
 import {
   Suspense,
   useCallback,
@@ -10,7 +12,9 @@ import {
   useState,
 } from "react";
 
-type Step = "select" | "game" | "result";
+const SHARE_URL = "https://coffee-game-chi.vercel.app";
+
+type Step = "select" | "gameSelect" | "game" | "pirate" | "result";
 type TouchPoint = { x: number; y: number; color: string };
 type RingPoint = TouchPoint & {
   id: number;
@@ -54,6 +58,27 @@ const CAFES = [
     bg: "#E8F5E9",
     link: "https://link.kakaopay.com/_/RACjFjp?f_referral_id=RC3571098572034610115",
   },
+  {
+    name: "투썸플레이스",
+    logo: "/twosome.png",
+    discount: 3,
+    bg: "#1A1A1A",
+    link: "https://link.kakaopay.com/_/rfHI4OV?f_referral_id=RC3571098572034610115",
+  },
+  {
+    name: "플링크",
+    logo: "/flink.png",
+    discount: 7,
+    bg: "#FDEBD0",
+    link: "https://link.kakaopay.com/_/rnSaPFQ?f_referral_id=RC3571098572034610115",
+  },
+  {
+    name: "펠트커피",
+    logo: "/felt.png",
+    discount: 7,
+    bg: "#F5F5F5",
+    link: "https://link.kakaopay.com/_/iMdKf9P?f_referral_id=RC3571098572034610115",
+  },
 ];
 
 const RING_COLORS = ["#FFEC00", "#3CB6E3", "#7ED557", "#FF6B9D", "#FF9F43"];
@@ -74,6 +99,9 @@ function HomeContent() {
   const resultTimerRef = useRef<number | null>(null);
   const colorIndexRef = useRef(0);
   const hasPickedRef = useRef(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [showQr, setShowQr] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const selectedCafe = CAFES[selectedCafeIndex];
   const activeTouchCount = rings.length;
@@ -83,7 +111,11 @@ function HomeContent() {
       return "커피 선택";
     }
 
-    if (step === "game") {
+    if (step === "gameSelect") {
+      return "게임 선택";
+    }
+
+    if (step === "game" || step === "pirate") {
       return `${selectedCafe.name} ${selectedCafe.discount}%`;
     }
 
@@ -115,6 +147,12 @@ function HomeContent() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (showQr && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, SHARE_URL, { width: 220, margin: 2 });
+    }
+  }, [showQr]);
 
   const clearSelectTimer = useCallback(() => {
     if (selectTimerRef.current) {
@@ -286,9 +324,17 @@ function HomeContent() {
     };
   }, [clearResultTimer, clearSelectTimer]);
 
-  function startGame() {
+  function goToGameSelect() {
+    setStep("gameSelect");
+  }
+
+  function startFingerGame() {
     resetTouchGame();
     setStep("game");
+  }
+
+  function startPirateGame() {
+    setStep("pirate");
   }
 
   function restart() {
@@ -297,15 +343,15 @@ function HomeContent() {
     setStep("select");
   }
 
-  function handleShare() {
-    const url = `${window.location.origin}?brand=${selectedCafeIndex}&shared=true`;
-    const text = `나 ${selectedCafe.name} 쏘기 당첨됐어 😭\n카카오페이 굿딜로 ${selectedCafe.discount}% 할인받아서 결제해줘!`;
-
+  function handleShareLink() {
     if (navigator.share) {
-      navigator.share({ title: "커피쏘기 게임", text, url });
+      navigator
+        .share({ title: "커피쏘기 게임", url: SHARE_URL })
+        .catch(() => undefined);
     } else {
-      navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
-        alert("링크가 복사됐어요! 친구에게 붙여넣기 해주세요 😊");
+      navigator.clipboard.writeText(SHARE_URL).then(() => {
+        setToast("링크 복사됨!");
+        window.setTimeout(() => setToast(null), 2000);
       });
     }
   }
@@ -325,7 +371,9 @@ function HomeContent() {
         <div className="flex justify-center py-3 text-lg font-black text-[#3A1D00]">
           {step === "select" ? "●" : "○"}
           <span className="px-2 text-[#B8B8B8]">—</span>
-          {step === "game" ? "●" : "○"}
+          {step === "gameSelect" || step === "game" || step === "pirate"
+            ? "●"
+            : "○"}
           <span className="px-2 text-[#B8B8B8]">—</span>
           {step === "result" ? "●" : "○"}
         </div>
@@ -374,13 +422,7 @@ function HomeContent() {
                         카카오페이 굿딜
                       </span>
                     </span>
-                    <span
-                      className={`rounded-full px-3 py-1 text-sm font-black ${
-                        cafe.name === "블루샥"
-                          ? "bg-[#FFEC00] text-[#3A1D00]"
-                          : "bg-neutral-100 text-neutral-700"
-                      }`}
-                    >
+                    <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-black text-neutral-700">
                       {cafe.discount}% 할인
                     </span>
                   </button>
@@ -389,17 +431,59 @@ function HomeContent() {
             </div>
 
             <div className="mt-3">
-              <div className="mb-2 rounded-2xl bg-white p-3 text-sm font-bold text-[#3A1D00]">
-                블루샥이 지금 최대 할인! 오늘의 추천 ☕
-              </div>
               <button
                 type="button"
-                onClick={startGame}
+                onClick={goToGameSelect}
                 className="w-full rounded-xl bg-[#FFEC00] px-5 py-3 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
               >
                 게임 시작 →
               </button>
             </div>
+          </div>
+        )}
+
+        {step === "gameSelect" && (
+          <div className="-mx-4 flex flex-1 flex-col bg-[#0F0F20] px-4 py-6">
+            <h1 className="text-center text-[20px] font-bold text-white">
+              어떤 게임으로 정할까요?
+            </h1>
+            <div className="mt-6 flex flex-1 flex-col gap-4">
+              <button
+                type="button"
+                onClick={startFingerGame}
+                className="rounded-2xl bg-[#1A1A2E] p-5 text-left transition active:scale-[0.99]"
+              >
+                <span className="text-3xl">👆</span>
+                <p className="mt-3 text-lg font-black text-white">손가락 내기</p>
+                <p className="mt-1 text-sm font-medium text-neutral-400">
+                  다같이 손가락 올리고 뽑기
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={startPirateGame}
+                className="rounded-2xl bg-[#1A1A2E] p-5 text-left transition active:scale-[0.99]"
+              >
+                <span className="text-3xl">🗡️</span>
+                <p className="mt-3 text-lg font-black text-white">해적룰렛</p>
+                <p className="mt-1 text-sm font-medium text-neutral-400">
+                  폰 돌려가며 칼 꽂기, 터지면 당첨
+                </p>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStep("select")}
+              className="mt-4 text-sm font-bold text-neutral-500 underline underline-offset-4"
+            >
+              ← 커피 다시 선택
+            </button>
+          </div>
+        )}
+
+        {step === "pirate" && (
+          <div className="-mx-4 flex min-h-0 flex-1 flex-col">
+            <PirateRoulette onComplete={() => setStep("result")} />
           </div>
         )}
 
@@ -484,7 +568,7 @@ function HomeContent() {
               type="button"
               onClick={() => {
                 resetTouchGame();
-                setStep("select");
+                setStep("gameSelect");
               }}
               className="mt-3 w-full rounded-xl bg-[#FFEC00] px-5 py-3 text-base font-black text-[#3A1D00] shadow-sm transition active:scale-[0.99]"
             >
@@ -533,13 +617,22 @@ function HomeContent() {
                 결제하기
               </a>
 
-              <button
-                type="button"
-                onClick={handleShare}
-                className="mt-3 w-full rounded-xl border-2 border-[#F0D800] bg-[#FEE500] px-5 py-4 text-sm font-black text-[#3A1D00] transition active:scale-[0.99]"
-              >
-                ☕ 커피 쏠 친구에게 공유하기
-              </button>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleShareLink}
+                  className="flex-1 rounded-xl border-2 border-[#F0D800] bg-[#FEE500] px-3 py-3 text-xs font-black text-[#3A1D00] transition active:scale-[0.99]"
+                >
+                  친구에게 공유 🔗
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQr(true)}
+                  className="flex-1 rounded-xl border-2 border-[#F0D800] bg-[#FEE500] px-3 py-3 text-xs font-black text-[#3A1D00] transition active:scale-[0.99]"
+                >
+                  QR로 공유 📷
+                </button>
+              </div>
 
               <button
                 type="button"
@@ -552,6 +645,28 @@ function HomeContent() {
           </div>
         )}
       </section>
+
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#111111] px-5 py-3 text-sm font-bold text-white shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      {showQr && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white px-6">
+          <p className="text-center text-lg font-black text-[#111111]">
+            친구 카메라로 스캔하세요 📷
+          </p>
+          <canvas ref={qrCanvasRef} className="mt-8" />
+          <button
+            type="button"
+            onClick={() => setShowQr(false)}
+            className="mt-8 w-full max-w-[280px] rounded-xl bg-neutral-200 px-5 py-4 text-sm font-black text-neutral-800"
+          >
+            닫기
+          </button>
+        </div>
+      )}
     </main>
   );
 }
